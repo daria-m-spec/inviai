@@ -7,6 +7,14 @@ interface InvoicePreviewProps {
   onClose: () => void
 }
 
+function ChatIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  )
+}
+
 /** The "generated invoice" view — embeds the real generated PDF (same file
  * the PDF button downloads) so patient data and page breaks always match
  * the actual document exactly, instead of maintaining a separate HTML
@@ -25,16 +33,28 @@ export function InvoicePreview({ invoice, onClose }: InvoicePreviewProps) {
         </button>
         <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.875rem' }}>{invoice.invoice_number}</span>
         <StatusBadge status={invoice.status} />
-        {hasPdf && (
-          <a
-            href={invoice.pdf_url}
-            target="_blank"
-            rel="noreferrer"
-            style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', color: '#216A56', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}
-          >
-            <DownloadIcon /> Open in new tab
-          </a>
-        )}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {invoice.chat_url !== '#' && (
+            <a
+              href={invoice.chat_url}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', height: '2rem', padding: '0 0.875rem', background: '#216A56', color: '#fff', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}
+            >
+              <ChatIcon /> Open AI support
+            </a>
+          )}
+          {hasPdf && (
+            <a
+              href={invoice.pdf_url}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', color: '#216A56', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}
+            >
+              <DownloadIcon /> Open in new tab
+            </a>
+          )}
+        </div>
       </div>
       <div style={{ flex: 1, minHeight: 0, background: '#525659' }}>
         {hasPdf ? (

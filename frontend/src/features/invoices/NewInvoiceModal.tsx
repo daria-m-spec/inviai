@@ -274,11 +274,26 @@ export function NewInvoiceModal({ onClose, onSave, editInvoice }: NewInvoiceModa
               ← Back to edit
             </button>
             <span style={{ fontSize: '0.8125rem', color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>Preview — {saved.status === 'sent' ? 'Finalized' : 'Draft'}</span>
-            {saved.pdf_url !== '#' && (
-              <a href={saved.pdf_url} target="_blank" rel="noreferrer" style={{ marginLeft: 'auto', fontSize: '0.8125rem', color: '#216A56', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                Download real PDF →
-              </a>
-            )}
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {saved.chat_url !== '#' && (
+                <a
+                  href={saved.chat_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', height: '2rem', padding: '0 0.875rem', background: '#216A56', color: '#fff', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  Open AI support
+                </a>
+              )}
+              {saved.pdf_url !== '#' && (
+                <a href={saved.pdf_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.8125rem', color: '#216A56', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                  Download real PDF →
+                </a>
+              )}
+            </div>
           </div>
           <div style={{ flex: 1, minHeight: 0, background: '#525659' }}>
             {saved.pdf_url !== '#' ? (
