@@ -1,0 +1,14 @@
+:root {
+  --ease-in: cubic-bezier(0.4, 0, 1, 1); /* @kind other */
+  --ease-out: cubic-bezier(0, 0, 0.2, 1); /* @kind other */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --duration-75: 75ms; /* @kind other */
+  --duration-100: 100ms; /* @kind other */
+  --duration-150: 150ms; /* @kind other */
+  --duration-200: 200ms; /* @kind other */
+  --duration-300: 300ms; /* @kind other */
+}
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes fadeOut { from { opacity: 1 } to { opacity: 0 } }
+@keyframes slideInDown { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes dialogIn { from { opacity: 0; transform: translate(-50%, -48%) scale(0.96) } to { opacity: 1; transform: translate(-50%, -50%) scale(1) } }

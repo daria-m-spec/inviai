@@ -11,7 +11,7 @@ import os
 
 from models import (
     Invoice, InvoiceLineItem, InvoiceExpense, InvoiceCreate,
-    InvoiceResponse, InvoiceStatus, Patient, Practice, GoaeProcedure,
+    InvoiceResponse, InvoiceStatus, Patient, PatientCreate, Practice, GoaeProcedure,
 )
 from database import init_db, seed_db, get_session, next_invoice_number, engine
 
@@ -206,6 +206,15 @@ def get_patient(patient_id: int, session: Session = Depends(get_session)):
     if not p:
         raise HTTPException(404, "Patient not found")
     return p
+
+
+@app.post("/api/patients", response_model=Patient)
+def create_patient(data: PatientCreate, session: Session = Depends(get_session)):
+    patient = Patient(**data.model_dump())
+    session.add(patient)
+    session.commit()
+    session.refresh(patient)
+    return patient
 
 
 # ── GOÄ Catalog ──

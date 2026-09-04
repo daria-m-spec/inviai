@@ -155,6 +155,18 @@ class ExpenseCreate(BaseModel):
     amount: float
 
 
+class PatientCreate(BaseModel):
+    anrede: Anrede = Anrede.HERR
+    first_name: str
+    last_name: str
+    date_of_birth: date | None = None
+    street: str = ""
+    postal_code: str = ""
+    city: str = ""
+    insurance_number: str = ""
+    email: str = ""
+
+
 class InvoiceCreate(BaseModel):
     patient_id: int
     diagnosis: str = ""
