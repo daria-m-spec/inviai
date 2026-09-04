@@ -8,7 +8,11 @@ from models import (
 from datetime import date, timedelta
 import os
 
-DB_PATH = os.getenv("INVIAI_DB", "inviai.db")
+# On Vercel's serverless runtime only /tmp is writable, so fall back there
+# automatically when no explicit INVIAI_DB is set. Local/self-hosted runs are
+# unaffected since VERCEL is only set in that environment.
+_default_db_path = "/tmp/inviai.db" if os.getenv("VERCEL") else "inviai.db"
+DB_PATH = os.getenv("INVIAI_DB", _default_db_path)
 engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
 
 

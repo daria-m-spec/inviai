@@ -1,6 +1,10 @@
 import type { ApiInvoice, ApiInvoiceStatus, ApiPatient, ApiPractice, ApiProcedure, InvoiceCreate, PatientCreate } from './types'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+// Explicit env var wins. Otherwise: production builds default to a relative
+// base (same-origin — for deployments that serve the API and the frontend
+// from the same domain, e.g. Vercel), dev builds default to the local
+// backend's port.
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:8000')
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {

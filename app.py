@@ -25,7 +25,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-BASE_URL = os.getenv("INVIAI_BASE_URL", "http://localhost:8000")
+_vercel_url = os.getenv("VERCEL_URL")
+_default_base_url = f"https://{_vercel_url}" if _vercel_url else "http://localhost:8000"
+BASE_URL = os.getenv("INVIAI_BASE_URL", _default_base_url)
 
 
 @app.on_event("startup")
@@ -82,9 +84,9 @@ def _build_response(inv: Invoice, session: Session) -> InvoiceResponse:
             {"description": e.description, "amount": e.amount, "receipt_required": e.receipt_required}
             for e in expenses
         ],
-        pdf_url=f"{BASE_URL}/invoices/{inv.id}/pdf",
-        payment_url=f"{BASE_URL}/pay/{inv.invoice_number}",
-        chat_url=f"{BASE_URL}/chat/{inv.invoice_number}",
+        pdf_url=f"{BASE_URL}/api/invoices/{inv.id}/pdf",
+        payment_url=f"{BASE_URL}/api/pay/{inv.invoice_number}",
+        chat_url=f"{BASE_URL}/api/chat/{inv.invoice_number}",
     )
 
 
@@ -238,7 +240,7 @@ def get_practice(session: Session = Depends(get_session)):
 
 # ── PDF generation ──
 
-@app.get("/invoices/{invoice_id}/pdf")
+@app.get("/api/invoices/{invoice_id}/pdf")
 def download_pdf(invoice_id: int, session: Session = Depends(get_session)):
     inv = session.get(Invoice, invoice_id)
     if not inv:
@@ -256,7 +258,7 @@ def download_pdf(invoice_id: int, session: Session = Depends(get_session)):
 
 # ── Payment page (mock) ──
 
-@app.get("/pay/{invoice_number}", response_class=HTMLResponse)
+@app.get("/api/pay/{invoice_number}", response_class=HTMLResponse)
 def payment_page(invoice_number: str, session: Session = Depends(get_session)):
     inv = session.exec(select(Invoice).where(Invoice.invoice_number == invoice_number)).first()
     if not inv:
@@ -323,7 +325,7 @@ function pay() {{
 
 # ── Chat widget page ──
 
-@app.get("/chat/{invoice_number}", response_class=HTMLResponse)
+@app.get("/api/chat/{invoice_number}", response_class=HTMLResponse)
 def chat_page(invoice_number: str, session: Session = Depends(get_session)):
     inv = session.exec(select(Invoice).where(Invoice.invoice_number == invoice_number)).first()
     if not inv:

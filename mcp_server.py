@@ -133,7 +133,7 @@ def get_payment_link(invoice_number: str) -> dict:
         }
 
         result = {
-            "payment_url": f"{base_url}/pay/{inv.invoice_number}",
+            "payment_url": f"{base_url}/api/pay/{inv.invoice_number}",
             "amount": f"€{inv.total:.2f}",
             "status": status_map.get(inv.status.value, inv.status.value),
             "reference": inv.invoice_number,
