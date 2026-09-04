@@ -70,6 +70,7 @@ export interface ApiInvoice {
   due_date: string | null
   status: ApiInvoiceStatus
   diagnosis: string
+  patient_id: number
   patient_name: string
   doctor_name: string
   subtotal_services: number

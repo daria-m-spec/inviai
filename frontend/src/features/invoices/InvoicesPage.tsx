@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Sidebar } from '../../app/Sidebar'
 import { MultiSelect } from './MultiSelect'
 import { NewInvoiceModal } from './NewInvoiceModal'
-import { InvoiceDetail } from './InvoiceDetail'
+import { InvoicePreview } from './InvoicePreview'
 import { StatusBadge, filterBtnBase } from './atoms'
 import { DownloadIcon, SearchIcon } from '../../app/icons'
 import { fmtDate, STATUS_LABEL } from '../../data/inviai'
@@ -22,7 +22,8 @@ export function InvoicesPage() {
   const [fProc, setFProc] = useState<string[]>([])
   const [fStatus, setFStatus] = useState<string[]>([])
   const [fDate, setFDate] = useState({ from: '', to: '' })
-  const [modalInv, setModalInv] = useState<ApiInvoice | null>(null)
+  const [previewInv, setPreviewInv] = useState<ApiInvoice | null>(null)
+  const [editingInvoice, setEditingInvoice] = useState<ApiInvoice | null>(null)
   const [visible, setVisible] = useState(25)
   const sentinelRef = useRef<HTMLTableRowElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -74,7 +75,7 @@ export function InvoicesPage() {
 
   useEffect(() => {
     setVisible(25)
-    setModalInv(null)
+    setPreviewInv(null)
   }, [q, fPatient, fProc, fStatus, fDate])
 
   useEffect(() => {
@@ -190,7 +191,7 @@ export function InvoicesPage() {
                   {rows.map(inv => (
                     <tr
                       key={inv.id}
-                      onClick={() => setModalInv(inv)}
+                      onClick={() => (inv.status === 'draft' ? setEditingInvoice(inv) : setPreviewInv(inv))}
                       style={{ cursor: 'pointer', background: 'transparent', transition: 'background 80ms' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--muted)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -240,24 +241,16 @@ export function InvoicesPage() {
           </div>
         </div>
       </div>
-      {modalInv && (
-        <div onClick={() => setModalInv(null)} style={{ position: 'fixed', inset: 0, background: 'oklch(0 0 0/50%)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--card)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-2xl)', width: '100%', maxWidth: '52rem', maxHeight: '90vh', overflow: 'auto', position: 'relative' }}>
-            <button
-              onClick={() => setModalInv(null)}
-              style={{ position: 'sticky', top: '1rem', float: 'right', margin: '1rem 1rem 0 0', width: '1.75rem', height: '1.75rem', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--muted)', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}
-            >
-              ✕
-            </button>
-            <InvoiceDetail invoice={modalInv} />
-          </div>
-        </div>
-      )}
-      {showNewInvoice && (
+      {previewInv && <InvoicePreview invoice={previewInv} onClose={() => setPreviewInv(null)} />}
+      {(showNewInvoice || editingInvoice) && (
         <NewInvoiceModal
-          onClose={() => setShowNewInvoice(false)}
+          editInvoice={editingInvoice ?? undefined}
+          onClose={() => {
+            setShowNewInvoice(false)
+            setEditingInvoice(null)
+          }}
           onSave={inv => {
-            setInvoices(prev => [inv, ...prev])
+            setInvoices(prev => (prev.some(i => i.id === inv.id) ? prev.map(i => (i.id === inv.id ? inv : i)) : [inv, ...prev]))
           }}
         />
       )}

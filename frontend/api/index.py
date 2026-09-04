@@ -205,6 +205,7 @@ class InvoiceResponse(BaseModel):
     due_date: date | None
     status: str
     diagnosis: str
+    patient_id: int
     patient_name: str
     doctor_name: str
     subtotal_services: float
@@ -945,6 +946,7 @@ def _build_response(inv: Invoice, session: Session) -> InvoiceResponse:
         due_date=inv.due_date,
         status=inv.status.value,
         diagnosis=inv.diagnosis,
+        patient_id=inv.patient_id,
         patient_name=patient_name,
         doctor_name=doctor_name,
         subtotal_services=inv.subtotal_services,
@@ -1001,29 +1003,13 @@ def get_invoice_by_number(invoice_number: str, session: Session = Depends(get_se
     return _build_response(inv, session)
 
 
-@app.post("/api/invoices", response_model=InvoiceResponse)
-def create_invoice(data: InvoiceCreate, session: Session = Depends(get_session)):
-    patient = session.get(Patient, data.patient_id)
-    if not patient:
-        raise HTTPException(404, "Patient not found")
-
-    practice = session.exec(select(Practice)).first()
-    inv_number = next_invoice_number(session)
-
-    inv = Invoice(
-        invoice_number=inv_number,
-        issue_date=data.issue_date or date.today(),
-        due_date=data.due_date or (date.today() + timedelta(days=30)),
-        status=InvoiceStatus.DRAFT,
-        diagnosis=data.diagnosis,
-        practice_id=practice.id if practice else None,
-        patient_id=data.patient_id,
-        vat_rate=data.vat_rate,
-        notes=data.notes,
-    )
-    session.add(inv)
+def _apply_invoice_content(inv: Invoice, data: InvoiceCreate, session: Session) -> None:
+    """(Re)write an invoice's line items, expenses, and computed totals."""
+    for li in session.exec(select(InvoiceLineItem).where(InvoiceLineItem.invoice_id == inv.id)).all():
+        session.delete(li)
+    for exp in session.exec(select(InvoiceExpense).where(InvoiceExpense.invoice_id == inv.id)).all():
+        session.delete(exp)
     session.commit()
-    session.refresh(inv)
 
     subtotal_services = 0.0
     for li_data in data.line_items:
@@ -1063,6 +1049,55 @@ def create_invoice(data: InvoiceCreate, session: Session = Depends(get_session))
     session.commit()
     session.refresh(inv)
 
+
+@app.post("/api/invoices", response_model=InvoiceResponse)
+def create_invoice(data: InvoiceCreate, session: Session = Depends(get_session)):
+    patient = session.get(Patient, data.patient_id)
+    if not patient:
+        raise HTTPException(404, "Patient not found")
+
+    practice = session.exec(select(Practice)).first()
+    inv_number = next_invoice_number(session)
+
+    inv = Invoice(
+        invoice_number=inv_number,
+        issue_date=data.issue_date or date.today(),
+        due_date=data.due_date or (date.today() + timedelta(days=30)),
+        status=InvoiceStatus.DRAFT,
+        diagnosis=data.diagnosis,
+        practice_id=practice.id if practice else None,
+        patient_id=data.patient_id,
+        vat_rate=data.vat_rate,
+        notes=data.notes,
+    )
+    session.add(inv)
+    session.commit()
+    session.refresh(inv)
+
+    _apply_invoice_content(inv, data, session)
+    return _build_response(inv, session)
+
+
+@app.put("/api/invoices/{invoice_id}", response_model=InvoiceResponse)
+def update_invoice(invoice_id: int, data: InvoiceCreate, session: Session = Depends(get_session)):
+    inv = session.get(Invoice, invoice_id)
+    if not inv:
+        raise HTTPException(404, "Invoice not found")
+    patient = session.get(Patient, data.patient_id)
+    if not patient:
+        raise HTTPException(404, "Patient not found")
+
+    inv.patient_id = data.patient_id
+    inv.diagnosis = data.diagnosis
+    inv.issue_date = data.issue_date or inv.issue_date
+    inv.due_date = data.due_date
+    inv.vat_rate = data.vat_rate
+    inv.notes = data.notes
+    session.add(inv)
+    session.commit()
+    session.refresh(inv)
+
+    _apply_invoice_content(inv, data, session)
     return _build_response(inv, session)
 
 
@@ -1238,21 +1273,22 @@ def _chat_html(inv_num, resp, status_de, procedures_text):
 <title>InviAI Chat — {inv_num}</title>
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}
-body{{font-family:'Satoshi',system-ui,sans-serif;background:#F0FBF8;min-height:100vh;display:flex;flex-direction:column}}
-.header{{background:#216A56;color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px}}
+html,body{{height:100%}}
+body{{font-family:'Satoshi',system-ui,sans-serif;background:#F0FBF8;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}}
+.header{{flex-shrink:0;background:#216A56;color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px}}
 .header .logo{{font-weight:700;font-size:18px}}
 .header .sub{{font-size:13px;opacity:.8}}
-.chat{{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px}}
+.chat{{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px;display:flex;flex-direction:column;gap:12px}}
 .msg{{max-width:85%;padding:12px 16px;border-radius:14px;font-size:15px;line-height:1.5}}
 .msg.bot{{background:#fff;color:#141414;align-self:flex-start;border:1px solid #E0DFDE;border-bottom-left-radius:4px}}
 .msg.user{{background:#216A56;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}}
-.actions{{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 12px}}
+.actions{{flex-shrink:0;display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 12px}}
 .action-btn{{background:#fff;border:1px solid #d1d5db;border-radius:20px;padding:8px 16px;font-size:14px;cursor:pointer;color:#141414;font-family:inherit}}
 .action-btn:hover{{background:#DDF8F1;border-color:#216A56;color:#216A56}}
-.input-bar{{display:flex;gap:8px;padding:12px 20px;background:#fff;border-top:1px solid #E0DFDE}}
-.input-bar input{{flex:1;border:1px solid #d1d5db;border-radius:10px;padding:10px 14px;font-size:15px;font-family:inherit;outline:none}}
+.input-bar{{flex-shrink:0;display:flex;gap:8px;padding:12px 20px;padding-bottom:max(12px,env(safe-area-inset-bottom));background:#fff;border-top:1px solid #E0DFDE}}
+.input-bar input{{flex:1;min-width:0;border:1px solid #d1d5db;border-radius:10px;padding:10px 14px;font-size:16px;font-family:inherit;outline:none}}
 .input-bar input:focus{{border-color:#216A56}}
-.input-bar button{{background:#216A56;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:600;cursor:pointer;font-family:inherit}}
+.input-bar button{{flex-shrink:0;background:#216A56;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:600;cursor:pointer;font-family:inherit}}
 .input-bar button:hover{{background:#1a5545}}
 .typing{{color:#6b7280;font-style:italic;font-size:14px;padding:0 20px 8px}}
 </style>

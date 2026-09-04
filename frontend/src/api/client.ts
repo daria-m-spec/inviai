@@ -53,6 +53,8 @@ export const api = {
   baseUrl: BASE_URL,
   listInvoices: () => withFallback(() => request<ApiInvoice[]>('/api/invoices'), mockApi.listInvoices),
   createInvoice: (data: InvoiceCreate) => withFallback(() => request<ApiInvoice>('/api/invoices', { method: 'POST', body: JSON.stringify(data) }), () => mockApi.createInvoice(data)),
+  updateInvoice: (id: number, data: InvoiceCreate) =>
+    withFallback(() => request<ApiInvoice>(`/api/invoices/${id}`, { method: 'PUT', body: JSON.stringify(data) }), () => mockApi.updateInvoice(id, data)),
   updateInvoiceStatus: (id: number, status: ApiInvoiceStatus) =>
     withFallback(() => request<{ ok: boolean; status: string }>(`/api/invoices/${id}/status?status=${status}`, { method: 'PATCH' }), () => mockApi.updateInvoiceStatus(id, status)),
   listPatients: (q = '') => withFallback(() => request<ApiPatient[]>(`/api/patients${q ? `?q=${encodeURIComponent(q)}` : ''}`), () => mockApi.listPatients(q)),

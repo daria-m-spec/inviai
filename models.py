@@ -185,6 +185,7 @@ class InvoiceResponse(BaseModel):
     due_date: date | None
     status: str
     diagnosis: str
+    patient_id: int
     patient_name: str
     doctor_name: str
     subtotal_services: float

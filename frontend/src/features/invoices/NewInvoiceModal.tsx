@@ -24,6 +24,8 @@ interface Material {
 interface NewInvoiceModalProps {
   onClose: () => void
   onSave: (invoice: ApiInvoice) => void
+  /** When set, the form edits this existing invoice in place instead of creating a new one. */
+  editInvoice?: ApiInvoice
 }
 
 const inp: CSSProperties = { width: '100%', height: '2.125rem', padding: '0 0.625rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', background: 'transparent', color: 'var(--foreground)', outline: 'none' }
@@ -34,11 +36,11 @@ function qrImage(url: string) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=110x110&color=216A56&data=${encodeURIComponent(url)}`
 }
 
-export function NewInvoiceModal({ onClose, onSave }: NewInvoiceModalProps) {
+export function NewInvoiceModal({ onClose, onSave, editInvoice }: NewInvoiceModalProps) {
   const today = new Date().toISOString().split('T')[0]
-  const [issueDate, setIssueDate] = useState(today)
-  const [dueDate, setDueDate] = useState(addDays(today, 30))
-  const [diagnosis, setDiagnosis] = useState('')
+  const [issueDate, setIssueDate] = useState(editInvoice?.issue_date ?? today)
+  const [dueDate, setDueDate] = useState(editInvoice?.due_date ?? addDays(today, 30))
+  const [diagnosis, setDiagnosis] = useState(editInvoice?.diagnosis ?? '')
 
   const [practice, setPractice] = useState<ApiPractice | null>(null)
   const [patients, setPatients] = useState<ApiPatient[]>([])
@@ -49,6 +51,15 @@ export function NewInvoiceModal({ onClose, onSave }: NewInvoiceModalProps) {
     api.listPatients().then(setPatients).catch(() => {})
     api.listProcedures().then(setProcedures).catch(() => {})
   }, [])
+
+  // Prefill the patient section once we know both the invoice being edited
+  // and the patient list (the invoice response only carries patient_id).
+  useEffect(() => {
+    if (!editInvoice || !patients.length) return
+    const p = patients.find(p => p.id === editInvoice.patient_id)
+    if (p) selectPatient(p)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editInvoice, patients])
 
   const praxis = practice
     ? {
@@ -114,20 +125,37 @@ export function NewInvoiceModal({ onClose, onSave }: NewInvoiceModalProps) {
     setPatQ('')
   }
 
-  // Line items
-  const [items, setItems] = useState<LineItem[]>([])
-  const [goaQ, setGoaQ] = useState<Record<number, string>>({})
+  // Line items — negative ids for pre-filled rows so they never collide with
+  // Date.now()-based ids assigned to rows added later in this session.
+  const [items, setItems] = useState<LineItem[]>(() =>
+    (editInvoice?.line_items ?? []).map((li, i) => ({
+      id: -(i + 1),
+      goaNr: li.goae_number,
+      desc: li.description,
+      baseRate: li.base_rate,
+      serviceDate: li.service_date,
+      qty: li.quantity,
+      multiplier: li.multiplier,
+      justification: li.justification,
+      verlangen: li.is_verlangen,
+    }))
+  )
+  const [goaQ, setGoaQ] = useState<Record<number, string>>(() =>
+    Object.fromEntries((editInvoice?.line_items ?? []).map((li, i) => [-(i + 1), `${li.goae_number} – ${li.description}`]))
+  )
   const [showGoaDrop, setShowGoaDrop] = useState<Record<number, boolean>>({})
 
   // Materials
-  const [mats, setMats] = useState<Material[]>([])
+  const [mats, setMats] = useState<Material[]>(() =>
+    (editInvoice?.expenses ?? []).map((e, i) => ({ id: -(i + 1), name: e.description, amount: e.amount }))
+  )
 
   // Notes
-  const [notes, setNotes] = useState('')
+  const [notes, setNotes] = useState(editInvoice?.notes ?? '')
   const [zahlungshinweis, setZahlungshinweis] = useState('Please transfer the invoice amount within 30 days to the specified account.')
   const [mahnhinweis, setMahnhinweis] = useState('In case of late payment, reminder fees will be charged pursuant to § 288 BGB.')
 
-  const [vatRate, setVatRate] = useState(0)
+  const [vatRate, setVatRate] = useState(editInvoice?.vat_rate ?? 0)
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -196,7 +224,7 @@ export function NewInvoiceModal({ onClose, onSave }: NewInvoiceModalProps) {
     setSaving(true)
     try {
       const patientId = await resolvePatientId()
-      let created = await api.createInvoice({
+      const payload = {
         patient_id: patientId,
         diagnosis,
         issue_date: issueDate,
@@ -216,7 +244,8 @@ export function NewInvoiceModal({ onClose, onSave }: NewInvoiceModalProps) {
             is_verlangen: i.verlangen,
           })),
         expenses: mats.filter(m => m.name).map(m => ({ description: m.name, amount: +m.amount || 0 })),
-      })
+      }
+      let created = editInvoice ? await api.updateInvoice(editInvoice.id, payload) : await api.createInvoice(payload)
       if (finalize) {
         await api.updateInvoiceStatus(created.id, 'sent')
         created = { ...created, status: 'sent' }
@@ -427,7 +456,7 @@ export function NewInvoiceModal({ onClose, onSave }: NewInvoiceModalProps) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 2rem', background: '#F8F8F8', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', width: '880px' }}>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.01em' }}>New Invoice</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.01em' }}>{editInvoice ? 'Edit Draft' : 'New Invoice'}</h2>
           </div>
           <button onClick={onClose} style={{ width: '2rem', height: '2rem', border: 'none', background: '#FFFFFF', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}>
             ×
@@ -442,7 +471,7 @@ export function NewInvoiceModal({ onClose, onSave }: NewInvoiceModalProps) {
           <div style={{ ...sec, width: '400px', marginBottom: 0, display: 'flex', alignItems: 'stretch', flexDirection: 'column', gap: '40px', justifyContent: 'flex-start' }}>
             <div>
               <label style={lbl}>Invoice Number</label>
-              <input value="Assigned on save" readOnly style={{ ...inp, color: 'var(--muted-foreground)' }} />
+              <input value={editInvoice ? editInvoice.invoice_number : 'Assigned on save'} readOnly style={{ ...inp, color: 'var(--muted-foreground)' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'row', gap: '12px' }}>
               <div style={{ width: '100%' }}>

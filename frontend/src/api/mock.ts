@@ -43,7 +43,7 @@ export const MOCK_PROCEDURES: ApiProcedure[] = [
   { id: 9, goae_number: '3501', description: 'Laboruntersuchung Blutbild (klein)', base_rate: 3.5, category: 'Technisch', min_duration: '', threshold_factor: 1.8 },
 ]
 
-function invoice(partial: Partial<ApiInvoice> & { id: number; invoice_number: string; patient_name: string }): ApiInvoice {
+function invoice(partial: Partial<ApiInvoice> & { id: number; invoice_number: string; patient_id: number; patient_name: string }): ApiInvoice {
   return {
     issue_date: '2026-09-01',
     due_date: '2026-10-01',
@@ -67,7 +67,7 @@ function invoice(partial: Partial<ApiInvoice> & { id: number; invoice_number: st
 
 let _invoices: ApiInvoice[] = [
   invoice({
-    id: 1, invoice_number: 'RE-2026-0001', patient_name: 'Thomas Weber', status: 'paid',
+    id: 1, invoice_number: 'RE-2026-0001', patient_id: 1, patient_name: 'Thomas Weber', status: 'paid',
     issue_date: '2026-08-05', due_date: '2026-09-04', diagnosis: 'Routineuntersuchung',
     subtotal_services: 96.05, total: 96.05,
     line_items: [
@@ -76,7 +76,7 @@ let _invoices: ApiInvoice[] = [
     ],
   }),
   invoice({
-    id: 2, invoice_number: 'RE-2026-0002', patient_name: 'Anna Schneider', status: 'sent',
+    id: 2, invoice_number: 'RE-2026-0002', patient_id: 2, patient_name: 'Anna Schneider', status: 'sent',
     issue_date: '2026-08-30', due_date: '2026-09-29', diagnosis: 'Akute Bronchitis',
     subtotal_services: 139.02, subtotal_expenses: 12.5, total: 151.52,
     line_items: [
@@ -86,7 +86,7 @@ let _invoices: ApiInvoice[] = [
     expenses: [{ description: 'Medikamente (Antibiotikum)', amount: 12.5, receipt_required: false }],
   }),
   invoice({
-    id: 3, invoice_number: 'RE-2026-0003', patient_name: 'Maria Becker', status: 'draft',
+    id: 3, invoice_number: 'RE-2026-0003', patient_id: 3, patient_name: 'Maria Becker', status: 'draft',
     issue_date: '2026-09-04', due_date: '2026-10-04', diagnosis: 'Vorsorgeuntersuchung',
     subtotal_services: 45.57, total: 45.57,
     line_items: [
@@ -99,45 +99,63 @@ let _invoices: ApiInvoice[] = [
 let _nextInvoiceId = 4
 let _nextPatientId = 5
 
+function computeInvoiceFields(data: InvoiceCreate) {
+  const patient = _patients.find(p => p.id === data.patient_id)
+  const line_items = (data.line_items ?? []).map(li => ({
+    goae_number: li.goae_number,
+    description: li.description ?? '',
+    service_date: li.service_date ?? new Date().toISOString().split('T')[0],
+    quantity: li.quantity ?? 1,
+    base_rate: li.base_rate,
+    multiplier: li.multiplier ?? 2.3,
+    justification: li.justification ?? '',
+    is_verlangen: li.is_verlangen ?? false,
+    amount: Math.round(li.base_rate * (li.multiplier ?? 2.3) * (li.quantity ?? 1) * 100) / 100,
+  }))
+  const expenses = (data.expenses ?? []).map(e => ({ description: e.description, amount: e.amount, receipt_required: e.amount > 25.56 }))
+  const subtotal_services = Math.round(line_items.reduce((s, li) => s + li.amount, 0) * 100) / 100
+  const subtotal_expenses = Math.round(expenses.reduce((s, e) => s + e.amount, 0) * 100) / 100
+  const vat_amount = Math.round(((subtotal_services + subtotal_expenses) * (data.vat_rate ?? 0)) / 100 * 100) / 100
+  return {
+    patient,
+    patient_id: data.patient_id,
+    patient_name: patient ? `${patient.first_name} ${patient.last_name}` : 'Unknown',
+    issue_date: data.issue_date ?? new Date().toISOString().split('T')[0],
+    due_date: data.due_date ?? null,
+    diagnosis: data.diagnosis ?? '',
+    notes: data.notes ?? '',
+    vat_rate: data.vat_rate ?? 0,
+    line_items,
+    expenses,
+    subtotal_services,
+    subtotal_expenses,
+    vat_amount,
+    total: Math.round((subtotal_services + subtotal_expenses + vat_amount) * 100) / 100,
+  }
+}
+
 export const mockApi = {
   listInvoices: async (): Promise<ApiInvoice[]> => [..._invoices],
 
   createInvoice: async (data: InvoiceCreate): Promise<ApiInvoice> => {
-    const patient = _patients.find(p => p.id === data.patient_id)
-    const line_items = (data.line_items ?? []).map(li => ({
-      goae_number: li.goae_number,
-      description: li.description ?? '',
-      service_date: li.service_date ?? new Date().toISOString().split('T')[0],
-      quantity: li.quantity ?? 1,
-      base_rate: li.base_rate,
-      multiplier: li.multiplier ?? 2.3,
-      justification: li.justification ?? '',
-      is_verlangen: li.is_verlangen ?? false,
-      amount: Math.round(li.base_rate * (li.multiplier ?? 2.3) * (li.quantity ?? 1) * 100) / 100,
-    }))
-    const expenses = (data.expenses ?? []).map(e => ({ description: e.description, amount: e.amount, receipt_required: e.amount > 25.56 }))
-    const subtotal_services = Math.round(line_items.reduce((s, li) => s + li.amount, 0) * 100) / 100
-    const subtotal_expenses = Math.round(expenses.reduce((s, e) => s + e.amount, 0) * 100) / 100
-    const vat_amount = Math.round(((subtotal_services + subtotal_expenses) * (data.vat_rate ?? 0)) / 100 * 100) / 100
+    const { patient: _patient, ...fields } = computeInvoiceFields(data)
     const year = new Date().getFullYear()
     const inv = invoice({
       id: _nextInvoiceId++,
       invoice_number: `RE-${year}-${String(_invoices.length + 1).padStart(4, '0')}`,
-      patient_name: patient ? `${patient.first_name} ${patient.last_name}` : 'Unknown',
-      issue_date: data.issue_date ?? new Date().toISOString().split('T')[0],
-      due_date: data.due_date ?? null,
-      diagnosis: data.diagnosis ?? '',
-      notes: data.notes ?? '',
-      vat_rate: data.vat_rate ?? 0,
-      line_items,
-      expenses,
-      subtotal_services,
-      subtotal_expenses,
-      vat_amount,
-      total: Math.round((subtotal_services + subtotal_expenses + vat_amount) * 100) / 100,
+      ...fields,
     })
     _invoices = [inv, ..._invoices]
     return inv
+  },
+
+  updateInvoice: async (id: number, data: InvoiceCreate): Promise<ApiInvoice> => {
+    const existing = _invoices.find(i => i.id === id)
+    if (!existing) throw new Error('Invoice not found')
+    const { patient: _patient, ...fields } = computeInvoiceFields(data)
+    const updated = invoice({ ...existing, ...fields, id: existing.id, invoice_number: existing.invoice_number, status: existing.status })
+    _invoices = _invoices.map(i => (i.id === id ? updated : i))
+    return updated
   },
 
   updateInvoiceStatus: async (id: number, status: ApiInvoiceStatus) => {
