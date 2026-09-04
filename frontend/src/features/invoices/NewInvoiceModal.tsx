@@ -244,9 +244,11 @@ export function NewInvoiceModal({ onClose, onSave }: NewInvoiceModalProps) {
               ← Back to edit
             </button>
             <span style={{ fontSize: '0.8125rem', color: 'var(--muted-foreground)' }}>Preview — {saved.status === 'sent' ? 'Finalized' : 'Draft'}</span>
-            <a href={saved.pdf_url} target="_blank" rel="noreferrer" style={{ marginLeft: 'auto', fontSize: '0.8125rem', color: '#216A56', fontWeight: 600, textDecoration: 'none' }}>
-              Download real PDF →
-            </a>
+            {saved.pdf_url !== '#' && (
+              <a href={saved.pdf_url} target="_blank" rel="noreferrer" style={{ marginLeft: 'auto', fontSize: '0.8125rem', color: '#216A56', fontWeight: 600, textDecoration: 'none' }}>
+                Download real PDF →
+              </a>
+            )}
           </div>
           <div style={{ width: '794px', minHeight: '1123px', background: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.10)', padding: '64px 72px', marginBottom: '1.5rem', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
@@ -361,16 +363,18 @@ export function NewInvoiceModal({ onClose, onSave }: NewInvoiceModalProps) {
                 <div style={{ fontSize: '0.8125rem', marginBottom: '0.25rem', fontWeight: 500 }}>Reference ID: {saved.invoice_number}</div>
                 {saved.notes && <div style={{ marginTop: '0.75rem', fontSize: '0.8125rem', color: 'var(--muted-foreground)', fontStyle: 'italic' }}>{saved.notes}</div>}
               </div>
-              <div style={{ display: 'flex', gap: '1.5rem', flexShrink: 0 }}>
-                <div style={{ textAlign: 'center' }}>
-                  <img src={qrImage(saved.payment_url)} alt="Payment QR" style={{ display: 'block', borderRadius: '6px', border: '1px solid var(--border)' }} />
-                  <div style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '0.375rem', fontWeight: 500 }}>Pay online</div>
+              {saved.payment_url !== '#' && (
+                <div style={{ display: 'flex', gap: '1.5rem', flexShrink: 0 }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <img src={qrImage(saved.payment_url)} alt="Payment QR" style={{ display: 'block', borderRadius: '6px', border: '1px solid var(--border)' }} />
+                    <div style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '0.375rem', fontWeight: 500 }}>Pay online</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <img src={qrImage(saved.chat_url)} alt="AI Chat QR" style={{ display: 'block', borderRadius: '6px', border: '1px solid var(--border)' }} />
+                    <div style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '0.375rem', fontWeight: 500 }}>AI assistant</div>
+                  </div>
                 </div>
-                <div style={{ textAlign: 'center' }}>
-                  <img src={qrImage(saved.chat_url)} alt="AI Chat QR" style={{ display: 'block', borderRadius: '6px', border: '1px solid var(--border)' }} />
-                  <div style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '0.375rem', fontWeight: 500 }}>AI assistant</div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

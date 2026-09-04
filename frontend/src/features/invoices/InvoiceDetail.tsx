@@ -72,14 +72,24 @@ export function InvoiceDetail({ invoice }: { invoice: ApiInvoice }) {
             </tbody>
           </table>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
-            <a
-              href={invoice.chat_url}
-              target="_blank"
-              rel="noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', height: '2.25rem', padding: '0 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', fontWeight: 500, color: 'var(--foreground)', textDecoration: 'none', fontFamily: 'var(--font-sans)' }}
-            >
-              Open patient chat
-            </a>
+            {invoice.chat_url !== '#' && (
+              <a
+                href={invoice.chat_url}
+                target="_blank"
+                rel="noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', height: '2.25rem', padding: '0 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', fontWeight: 500, color: 'var(--foreground)', textDecoration: 'none', fontFamily: 'var(--font-sans)' }}
+              >
+                Open patient chat
+              </a>
+            )}
+            {invoice.pdf_url === '#' ? (
+              <span
+                title="Not available in demo mode — no backend connected"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', height: '2.25rem', padding: '0 1rem', background: 'var(--muted)', color: 'var(--muted-foreground)', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', fontWeight: 500, fontFamily: 'var(--font-sans)' }}
+              >
+                <DownloadIcon /> Download PDF
+              </span>
+            ) : (
             <a
               href={invoice.pdf_url}
               target="_blank"
@@ -106,6 +116,7 @@ export function InvoiceDetail({ invoice }: { invoice: ApiInvoice }) {
             >
               <DownloadIcon /> Download PDF
             </a>
+            )}
           </div>
         </div>
       </div>

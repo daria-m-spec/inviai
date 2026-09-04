@@ -16,6 +16,7 @@ export function InvoicesPage() {
   const [invoices, setInvoices] = useState<ApiInvoice[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [isMock, setIsMock] = useState(api.isMock)
   const [q, setQ] = useState('')
   const [fPatient, setFPatient] = useState<string[]>([])
   const [fProc, setFProc] = useState<string[]>([])
@@ -33,11 +34,18 @@ export function InvoicesPage() {
       .listInvoices()
       .then(setInvoices)
       .catch(e => setLoadError(e instanceof Error ? e.message : 'Failed to load invoices.'))
-      .finally(() => setLoading(false))
+      .finally(() => {
+        setLoading(false)
+        setIsMock(api.isMock)
+      })
   }
 
   useEffect(() => {
     refresh()
+    const unsubscribe = api.onMockFallback(() => setIsMock(true))
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
   const patientOptions = useMemo(() => Array.from(new Set(invoices.map(inv => inv.patient_name))).sort(), [invoices])
@@ -160,6 +168,11 @@ export function InvoicesPage() {
                 </button>
               </div>
             )}
+            {!loadError && isMock && (
+              <div style={{ marginBottom: '1rem', padding: '0.625rem 1rem', background: '#FEF9C3', color: '#854D0E', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem' }}>
+                Demo data — no backend connected. Changes here aren't saved anywhere.
+              </div>
+            )}
 
             <div ref={scrollRef} style={{ flex: 1, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', marginBottom: '1.5rem' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
@@ -196,7 +209,11 @@ export function InvoicesPage() {
                           href={inv.pdf_url}
                           target="_blank"
                           rel="noreferrer"
-                          onClick={e => e.stopPropagation()}
+                          title={inv.pdf_url === '#' ? 'Not available in demo mode — no backend connected' : undefined}
+                          onClick={e => {
+                            e.stopPropagation()
+                            if (inv.pdf_url === '#') e.preventDefault()
+                          }}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.625rem', height: '1.875rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--foreground)', fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 500, whiteSpace: 'nowrap', transition: 'background 100ms', textDecoration: 'none' }}
                           onMouseEnter={e => (e.currentTarget.style.background = 'var(--muted)')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
