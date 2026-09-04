@@ -387,8 +387,8 @@ def generate_invoice_pdf(invoice_resp, practice, patient, base_url: str) -> str:
 
     elements.append(Spacer(1, 8 * mm))
 
-    payment_url = f"{base_url}/pay/{invoice_resp.invoice_number}"
-    chat_url = f"{base_url}/chat/{invoice_resp.invoice_number}"
+    payment_url = f"{base_url}/api/pay/{invoice_resp.invoice_number}"
+    chat_url = f"{base_url}/api/chat/{invoice_resp.invoice_number}"
 
     qr_payment = _make_qr(payment_url, size=80)
     qr_chat = _make_qr(chat_url, size=80)
