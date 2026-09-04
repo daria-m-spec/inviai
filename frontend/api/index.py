@@ -1176,7 +1176,8 @@ def download_pdf(invoice_id: int, session: Session = Depends(get_session)):
 
     pdf_path = generate_invoice_pdf(resp, practice, patient, BASE_URL)
     return FileResponse(pdf_path, media_type="application/pdf",
-                        filename=f"{inv.invoice_number}.pdf")
+                        filename=f"{inv.invoice_number}.pdf",
+                        content_disposition_type="inline")
 
 
 # ── Payment page (mock) ──
