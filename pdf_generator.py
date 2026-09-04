@@ -170,6 +170,8 @@ def generate_invoice_pdf(invoice_resp, practice, patient, base_url: str) -> str:
         elements.append(Paragraph(patient.street, s["body"]))
     if patient.postal_code or patient.city:
         elements.append(Paragraph(f"{patient.postal_code} {patient.city}".strip(), s["body"]))
+    if patient.email:
+        elements.append(Paragraph(patient.email, s["small"]))
 
     elements.append(Spacer(1, 10 * mm))
 

@@ -32,10 +32,6 @@ const inp: CSSProperties = { width: '100%', height: '2.125rem', padding: '0 0.62
 const lbl: CSSProperties = { fontSize: '0.7rem', fontWeight: 600, color: 'var(--muted-foreground)', display: 'block', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.04em' }
 const sec: CSSProperties = { background: '#fff', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border)', padding: '1.5rem', marginBottom: '1rem', width: '880px' }
 
-function qrImage(url: string) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=110x110&color=216A56&data=${encodeURIComponent(url)}`
-}
-
 export function NewInvoiceModal({ onClose, onSave, editInvoice }: NewInvoiceModalProps) {
   const today = new Date().toISOString().split('T')[0]
   const [issueDate, setIssueDate] = useState(editInvoice?.issue_date ?? today)
@@ -269,147 +265,29 @@ export function NewInvoiceModal({ onClose, onSave, editInvoice }: NewInvoiceModa
   if (saved) {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#F3F4F6', zIndex: 400, display: 'flex', overflow: 'hidden' }}>
-        <div style={{ flex: 1, overflow: 'auto', padding: '2rem 1rem', background: '#F8F8F8', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ width: '794px', maxWidth: '100%', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1.5rem', background: '#fff', borderBottom: '1px solid var(--border)' }}>
             <button
               onClick={() => setSaved(null)}
-              style={{ height: '2rem', padding: '0 0.875rem', border: '1px solid var(--border)', background: '#fff', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', cursor: 'pointer', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}
+              style={{ height: '2rem', padding: '0 0.875rem', border: '1px solid var(--border)', background: '#fff', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', cursor: 'pointer', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}
             >
               ← Back to edit
             </button>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--muted-foreground)' }}>Preview — {saved.status === 'sent' ? 'Finalized' : 'Draft'}</span>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>Preview — {saved.status === 'sent' ? 'Finalized' : 'Draft'}</span>
             {saved.pdf_url !== '#' && (
-              <a href={saved.pdf_url} target="_blank" rel="noreferrer" style={{ marginLeft: 'auto', fontSize: '0.8125rem', color: '#216A56', fontWeight: 600, textDecoration: 'none' }}>
+              <a href={saved.pdf_url} target="_blank" rel="noreferrer" style={{ marginLeft: 'auto', fontSize: '0.8125rem', color: '#216A56', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
                 Download real PDF →
               </a>
             )}
           </div>
-          <div style={{ width: '794px', maxWidth: '100%', minHeight: '1123px', background: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.10)', padding: 'clamp(24px, 6vw, 64px) clamp(20px, 7vw, 72px)', marginBottom: '1.5rem', boxSizing: 'border-box' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#216A56', marginBottom: '0.25rem' }}>InviAI</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
-                  <div style={{ fontSize: '0.875rem', color: '#000000', fontWeight: 600 }}>{praxis.arztName}</div>
-                  <div style={{ fontSize: '0.875rem', color: '#000000' }}>{praxis.fachgebiet}</div>
-                  <div style={{ fontSize: '0.875rem', color: '#000000', marginTop: '0.25rem' }}>{praxis.adresse}</div>
-                </div>
-              </div>
-              <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>{saved.invoice_number}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ fontSize: '0.8125rem', color: 'var(--muted-foreground)' }}>Issue date: {saved.issue_date}</div>
-                  <div style={{ fontSize: '0.8125rem', color: 'var(--muted-foreground)' }}>Due date: {saved.due_date || '—'}</div>
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '3rem', marginBottom: '2rem' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Bill to</div>
-                <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{saved.patient_name}</div>
-                {versNr && <div style={{ fontSize: '0.8125rem', color: 'var(--muted-foreground)' }}>Insurance No.: {versNr}</div>}
-              </div>
-              {saved.diagnosis && (
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Diagnosis</div>
-                  <div style={{ fontSize: '0.8125rem' }}>{saved.diagnosis}</div>
-                </div>
-              )}
-            </div>
-            {saved.line_items.length > 0 && (
-              <div style={{ marginBottom: '2rem' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                      {['§ GOÄ', 'Description', 'Date', 'Qty', 'Factor', 'Amount'].map((h, i) => (
-                        <th
-                          key={h}
-                          style={{
-                            textAlign: i === 2 || i === 3 || i === 4 ? 'center' : i === 5 ? 'right' : 'left',
-                            padding: '0.5rem 0.375rem',
-                            fontWeight: 600,
-                            color: 'var(--muted-foreground)',
-                            fontSize: '0.7rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.04em',
-                          }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {saved.line_items.map((li, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid var(--border)', background: idx % 2 === 0 ? 'transparent' : '#FAFAFA' }}>
-                        <td style={{ padding: '0.625rem 0.375rem', fontFamily: 'var(--font-mono)' }}>{li.goae_number || '—'}</td>
-                        <td style={{ padding: '0.625rem 0.375rem' }}>{li.description || '—'}</td>
-                        <td style={{ padding: '0.625rem 0.375rem', textAlign: 'center', color: 'var(--muted-foreground)' }}>{li.service_date}</td>
-                        <td style={{ padding: '0.625rem 0.375rem', textAlign: 'center' }}>{li.quantity}</td>
-                        <td style={{ padding: '0.625rem 0.375rem', textAlign: 'center' }}>{li.multiplier}x</td>
-                        <td style={{ padding: '0.625rem 0.375rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 500 }}>{li.amount.toFixed(2)} €</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div style={{ flex: 1, minHeight: 0, background: '#525659' }}>
+            {saved.pdf_url !== '#' ? (
+              <iframe title={`Invoice ${saved.invoice_number}`} src={saved.pdf_url} style={{ width: '100%', height: '100%', border: 'none' }} />
+            ) : (
+              <div style={{ padding: '3rem 1.5rem', textAlign: 'center', color: 'var(--muted-foreground)', background: '#fff', height: '100%' }}>
+                PDF not available in demo mode — no backend connected.
               </div>
             )}
-            {saved.expenses.length > 0 && (
-              <div style={{ marginBottom: '2rem' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Expenses / Materials</div>
-                {saved.expenses.map((exp, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', padding: '0.25rem 0' }}>
-                    <span>{exp.description}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)' }}>{exp.amount.toFixed(2)} €</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div style={{ borderTop: '2px solid var(--border)', paddingTop: '1rem', marginBottom: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-              <div style={{ width: '260px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.375rem' }}>
-                  <span style={{ color: 'var(--muted-foreground)' }}>Services</span>
-                  <span style={{ fontFamily: 'var(--font-mono)' }}>{saved.subtotal_services.toFixed(2)} €</span>
-                </div>
-                {saved.subtotal_expenses > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.375rem' }}>
-                    <span style={{ color: 'var(--muted-foreground)' }}>Expenses</span>
-                    <span style={{ fontFamily: 'var(--font-mono)' }}>{saved.subtotal_expenses.toFixed(2)} €</span>
-                  </div>
-                )}
-                {saved.vat_amount > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.375rem' }}>
-                    <span style={{ color: 'var(--muted-foreground)' }}>VAT {saved.vat_rate}%</span>
-                    <span style={{ fontFamily: 'var(--font-mono)' }}>{saved.vat_amount.toFixed(2)} €</span>
-                  </div>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1.125rem', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
-                  <span>Total</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', color: '#216A56' }}>{saved.total.toFixed(2)} €</span>
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
-              <div style={{ flex: '1 1 220px', minWidth: 0 }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.625rem' }}>Payment reference</div>
-                <div style={{ fontSize: '0.8125rem', marginBottom: '0.25rem' }}>Tax No.: {praxis.steuernummer}</div>
-                <div style={{ fontSize: '0.8125rem', marginBottom: '0.25rem' }}>IBAN: {praxis.iban}</div>
-                <div style={{ fontSize: '0.8125rem', marginBottom: '0.25rem' }}>BIC: {praxis.bic}</div>
-                <div style={{ fontSize: '0.8125rem', marginBottom: '0.25rem', fontWeight: 500 }}>Reference ID: {saved.invoice_number}</div>
-                {saved.notes && <div style={{ marginTop: '0.75rem', fontSize: '0.8125rem', color: 'var(--muted-foreground)', fontStyle: 'italic' }}>{saved.notes}</div>}
-              </div>
-              {saved.payment_url !== '#' && (
-                <div style={{ display: 'flex', gap: '1.5rem', flexShrink: 0, marginLeft: 'auto' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <img src={qrImage(saved.payment_url)} alt="Payment QR" style={{ display: 'block', width: 'clamp(64px, 20vw, 110px)', height: 'clamp(64px, 20vw, 110px)', borderRadius: '6px', border: '1px solid var(--border)' }} />
-                    <div style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '0.375rem', fontWeight: 500 }}>Pay online</div>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <img src={qrImage(saved.chat_url)} alt="AI Chat QR" style={{ display: 'block', width: 'clamp(64px, 20vw, 110px)', height: 'clamp(64px, 20vw, 110px)', borderRadius: '6px', border: '1px solid var(--border)' }} />
-                    <div style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '0.375rem', fontWeight: 500 }}>AI assistant</div>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </div>
         <div style={{ width: '20rem', flexShrink: 0, background: '#fff', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
