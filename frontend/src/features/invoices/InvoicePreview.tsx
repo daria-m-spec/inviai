@@ -44,7 +44,7 @@ export function InvoicePreview({ invoice, onClose }: InvoicePreviewProps) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#F3F4F6', zIndex: 400, display: 'flex', overflow: 'hidden' }}>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: '2rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ width: '794px', maxWidth: '100%', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
             onClick={onClose}
@@ -59,7 +59,7 @@ export function InvoicePreview({ invoice, onClose }: InvoicePreviewProps) {
             </a>
           )}
         </div>
-        <div style={{ width: '794px', maxWidth: '100%', minHeight: '1123px', background: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.10)', padding: '64px 72px', boxSizing: 'border-box' }}>
+        <div style={{ width: '794px', maxWidth: '100%', minHeight: '1123px', background: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.10)', padding: 'clamp(24px, 6vw, 64px) clamp(20px, 7vw, 72px)', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#216A56', marginBottom: '0.25rem' }}>InviAI</div>
@@ -162,8 +162,8 @@ export function InvoicePreview({ invoice, onClose }: InvoicePreviewProps) {
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
-            <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+            <div style={{ flex: '1 1 220px', minWidth: 0 }}>
               <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.625rem' }}>Payment reference</div>
               <div style={{ fontSize: '0.8125rem', marginBottom: '0.25rem' }}>Tax No.: {praxis.steuernummer}</div>
               <div style={{ fontSize: '0.8125rem', marginBottom: '0.25rem' }}>IBAN: {praxis.iban}</div>
@@ -172,13 +172,13 @@ export function InvoicePreview({ invoice, onClose }: InvoicePreviewProps) {
               {invoice.notes && <div style={{ marginTop: '0.75rem', fontSize: '0.8125rem', color: 'var(--muted-foreground)', fontStyle: 'italic' }}>{invoice.notes}</div>}
             </div>
             {invoice.payment_url !== '#' && (
-              <div style={{ display: 'flex', gap: '1.5rem', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: '1.5rem', flexShrink: 0, marginLeft: 'auto' }}>
                 <div style={{ textAlign: 'center' }}>
-                  <img src={qrImage(invoice.payment_url)} alt="Payment QR" style={{ display: 'block', borderRadius: '6px', border: '1px solid var(--border)' }} />
+                  <img src={qrImage(invoice.payment_url)} alt="Payment QR" style={{ display: 'block', width: 'clamp(64px, 20vw, 110px)', height: 'clamp(64px, 20vw, 110px)', borderRadius: '6px', border: '1px solid var(--border)' }} />
                   <div style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '0.375rem', fontWeight: 500 }}>Pay online</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <img src={qrImage(invoice.chat_url)} alt="AI Chat QR" style={{ display: 'block', borderRadius: '6px', border: '1px solid var(--border)' }} />
+                  <img src={qrImage(invoice.chat_url)} alt="AI Chat QR" style={{ display: 'block', width: 'clamp(64px, 20vw, 110px)', height: 'clamp(64px, 20vw, 110px)', borderRadius: '6px', border: '1px solid var(--border)' }} />
                   <div style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '0.375rem', fontWeight: 500 }}>AI assistant</div>
                 </div>
               </div>

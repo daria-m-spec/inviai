@@ -246,14 +246,19 @@ export function NewInvoiceModal({ onClose, onSave, editInvoice }: NewInvoiceModa
         expenses: mats.filter(m => m.name).map(m => ({ description: m.name, amount: +m.amount || 0 })),
       }
       let created = editInvoice ? await api.updateInvoice(editInvoice.id, payload) : await api.createInvoice(payload)
+      onSave(created)
       if (finalize) {
         await api.updateInvoiceStatus(created.id, 'sent')
         created = { ...created, status: 'sent' }
+        onSave(created)
+        setSaved(created)
+        setSendEmail(patEmail || selectedPat?.email || '')
+        setSendDesc(`Invoice ${created.invoice_number} — ${created.total.toFixed(2)} € — due ${created.due_date || '—'}`)
+      } else {
+        // Draft saves just persist and return to the invoices list — the
+        // full-page "ready to send" preview is only for finalized invoices.
+        onClose()
       }
-      setSaved(created)
-      setSendEmail(patEmail || selectedPat?.email || '')
-      setSendDesc(`Invoice ${created.invoice_number} — ${created.total.toFixed(2)} € — due ${created.due_date || '—'}`)
-      onSave(created)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save invoice.')
     } finally {
@@ -264,8 +269,8 @@ export function NewInvoiceModal({ onClose, onSave, editInvoice }: NewInvoiceModa
   if (saved) {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#F3F4F6', zIndex: 400, display: 'flex', overflow: 'hidden' }}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '2rem', background: '#F8F8F8', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ width: '794px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: '2rem 1rem', background: '#F8F8F8', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ width: '794px', maxWidth: '100%', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <button
               onClick={() => setSaved(null)}
               style={{ height: '2rem', padding: '0 0.875rem', border: '1px solid var(--border)', background: '#fff', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', cursor: 'pointer', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}
@@ -279,7 +284,7 @@ export function NewInvoiceModal({ onClose, onSave, editInvoice }: NewInvoiceModa
               </a>
             )}
           </div>
-          <div style={{ width: '794px', minHeight: '1123px', background: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.10)', padding: '64px 72px', marginBottom: '1.5rem', boxSizing: 'border-box' }}>
+          <div style={{ width: '794px', maxWidth: '100%', minHeight: '1123px', background: '#fff', boxShadow: '0 2px 16px rgba(0,0,0,0.10)', padding: 'clamp(24px, 6vw, 64px) clamp(20px, 7vw, 72px)', marginBottom: '1.5rem', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#216A56', marginBottom: '0.25rem' }}>InviAI</div>
@@ -383,8 +388,8 @@ export function NewInvoiceModal({ onClose, onSave, editInvoice }: NewInvoiceModa
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
-              <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+              <div style={{ flex: '1 1 220px', minWidth: 0 }}>
                 <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.625rem' }}>Payment reference</div>
                 <div style={{ fontSize: '0.8125rem', marginBottom: '0.25rem' }}>Tax No.: {praxis.steuernummer}</div>
                 <div style={{ fontSize: '0.8125rem', marginBottom: '0.25rem' }}>IBAN: {praxis.iban}</div>
@@ -393,13 +398,13 @@ export function NewInvoiceModal({ onClose, onSave, editInvoice }: NewInvoiceModa
                 {saved.notes && <div style={{ marginTop: '0.75rem', fontSize: '0.8125rem', color: 'var(--muted-foreground)', fontStyle: 'italic' }}>{saved.notes}</div>}
               </div>
               {saved.payment_url !== '#' && (
-                <div style={{ display: 'flex', gap: '1.5rem', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: '1.5rem', flexShrink: 0, marginLeft: 'auto' }}>
                   <div style={{ textAlign: 'center' }}>
-                    <img src={qrImage(saved.payment_url)} alt="Payment QR" style={{ display: 'block', borderRadius: '6px', border: '1px solid var(--border)' }} />
+                    <img src={qrImage(saved.payment_url)} alt="Payment QR" style={{ display: 'block', width: 'clamp(64px, 20vw, 110px)', height: 'clamp(64px, 20vw, 110px)', borderRadius: '6px', border: '1px solid var(--border)' }} />
                     <div style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '0.375rem', fontWeight: 500 }}>Pay online</div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <img src={qrImage(saved.chat_url)} alt="AI Chat QR" style={{ display: 'block', borderRadius: '6px', border: '1px solid var(--border)' }} />
+                    <img src={qrImage(saved.chat_url)} alt="AI Chat QR" style={{ display: 'block', width: 'clamp(64px, 20vw, 110px)', height: 'clamp(64px, 20vw, 110px)', borderRadius: '6px', border: '1px solid var(--border)' }} />
                     <div style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', marginTop: '0.375rem', fontWeight: 500 }}>AI assistant</div>
                   </div>
                 </div>
