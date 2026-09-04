@@ -904,7 +904,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-_vercel_url = os.getenv("VERCEL_URL")
+# Prefer the stable production domain over VERCEL_URL, which is unique to
+# each individual deployment and would break already-generated QR codes /
+# PDF links the moment a new deployment goes live.
+_vercel_url = os.getenv("VERCEL_PROJECT_PRODUCTION_URL") or os.getenv("VERCEL_URL")
 _default_base_url = f"https://{_vercel_url}" if _vercel_url else "http://localhost:8000"
 BASE_URL = os.getenv("INVIAI_BASE_URL", _default_base_url)
 
