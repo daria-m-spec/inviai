@@ -53,9 +53,9 @@ def _styles():
 
     styles = {
         "logo": ParagraphStyle("logo", fontName=bold_font, fontSize=22,
-                               textColor=BRAND_PRIMARY, spaceAfter=2),
+                               textColor=BRAND_PRIMARY, leading=26, spaceAfter=4),
         "h1": ParagraphStyle("h1", fontName=bold_font, fontSize=16,
-                             textColor=TEXT_DARK, spaceAfter=6),
+                             textColor=TEXT_DARK, leading=20, spaceAfter=6),
         "h2": ParagraphStyle("h2", fontName=bold_font, fontSize=11,
                              textColor=TEXT_DARK, spaceBefore=12, spaceAfter=4),
         "body": ParagraphStyle("body", fontName=base_font, fontSize=9.5,
@@ -71,7 +71,7 @@ def _styles():
         "right_bold": ParagraphStyle("right_bold", fontName=bold_font, fontSize=9.5,
                                      textColor=TEXT_DARK, alignment=TA_RIGHT, leading=14),
         "total": ParagraphStyle("total", fontName=bold_font, fontSize=13,
-                                textColor=TEXT_DARK, alignment=TA_RIGHT),
+                                textColor=TEXT_DARK, leading=16, alignment=TA_RIGHT),
         "center": ParagraphStyle("center", fontName=base_font, fontSize=8,
                                  textColor=TEXT_GRAY, alignment=TA_CENTER, leading=11),
         "footer": ParagraphStyle("footer", fontName=base_font, fontSize=7,
@@ -115,7 +115,7 @@ def generate_invoice_pdf(invoice_resp, practice, patient, base_url: str) -> str:
 
     header_left = [
         Paragraph("InviAI", s["logo"]),
-        Spacer(1, 2),
+        Spacer(1, 4),
         Paragraph(f"{practice.practice_name}" if practice.practice_name else "", s["body"]),
         Paragraph(
             f"{practice.doctor_title} {practice.doctor_first_name} {practice.doctor_last_name}".strip(),
@@ -132,8 +132,8 @@ def generate_invoice_pdf(invoice_resp, practice, patient, base_url: str) -> str:
 
     header_right = [
         Paragraph(f"<b>RECHNUNG</b>", ParagraphStyle("inv_title", fontName="Helvetica-Bold",
-                  fontSize=20, textColor=BRAND_PRIMARY, alignment=TA_RIGHT)),
-        Spacer(1, 4),
+                  fontSize=20, leading=24, textColor=BRAND_PRIMARY, alignment=TA_RIGHT)),
+        Spacer(1, 6),
         Paragraph(f"Nr. {invoice_resp.invoice_number}", ParagraphStyle("inv_num",
                   fontName="Helvetica", fontSize=10, textColor=TEXT_GRAY, alignment=TA_RIGHT)),
         Spacer(1, 4),
