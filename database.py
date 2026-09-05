@@ -62,6 +62,48 @@ SAMPLE_PATIENTS = [
     (Anrede.FRAU, "Anna", "Schneider", "1985-11-22", "Kantstr. 15", "10623", "Berlin", "K123456789", "anna.schneider@mail.de"),
     (Anrede.FRAU, "Maria", "Becker", "1992-03-08", "Prenzlauer Allee 88", "10405", "Berlin", "", "maria.becker@mail.de"),
     (Anrede.HERR, "Jan", "Fischer", "1968-09-30", "Kurfürstendamm 120", "10711", "Berlin", "F987654321", "jan.fischer@mail.de"),
+    (Anrede.FRAU, "Lena", "Hoffmann", "1990-07-19", "Torstr. 55", "10119", "Berlin", "L456789123", "lena.hoffmann@mail.de"),
+    (Anrede.HERR, "Michael", "Bauer", "1975-02-27", "Karl-Marx-Str. 210", "12043", "Berlin", "", "michael.bauer@mail.de"),
+    (Anrede.FRAU, "Sophie", "Wagner", "1988-12-03", "Bergmannstr. 33", "10961", "Berlin", "S321654987", "sophie.wagner@mail.de"),
+    (Anrede.HERR, "David", "Schulz", "1995-06-11", "Warschauer Str. 70", "10243", "Berlin", "", "david.schulz@mail.de"),
+    (Anrede.FRAU, "Julia", "Krüger", "1982-04-25", "Danziger Str. 12", "10435", "Berlin", "J159753468", "julia.krueger@mail.de"),
+    (Anrede.HERR, "Peter", "Zimmermann", "1965-10-08", "Schönhauser Allee 145", "10437", "Berlin", "", "peter.zimmermann@mail.de"),
+]
+
+# Each entry: (patient index into SAMPLE_PATIENTS, status, days since issue,
+# days since due date — or None to default to issue date + 30, diagnosis,
+# line items as (goae_number, quantity), expenses as (description, amount)).
+# A positive "days since due date" means the due date is in the past
+# (used for paid/overdue invoices); None means due 30 days after issue.
+SAMPLE_INVOICES = [
+    (0, InvoiceStatus.PAID, 35, 5, "Routineuntersuchung",
+     [("1", 1), ("8", 1), ("651", 1), ("250", 1), ("3501", 1)], []),
+    (1, InvoiceStatus.SENT, 10, None, "Akute Bronchitis",
+     [("3", 1), ("410", 1), ("250", 1)], [("Medikamente (Antibiotikum)", 12.50)]),
+    (2, InvoiceStatus.DRAFT, 0, None, "Vorsorgeuntersuchung",
+     [("1", 1), ("8", 1)], []),
+    (3, InvoiceStatus.PAID, 60, 30, "Kontrolluntersuchung nach OP",
+     [("7", 1), ("651", 1), ("3501", 1)], []),
+    (4, InvoiceStatus.OVERDUE, 45, 15, "Migräne Abklärung",
+     [("34", 1), ("1", 1)], []),
+    (5, InvoiceStatus.VIEWED, 5, None, "Rückenschmerzen",
+     [("6", 1), ("652", 1)], []),
+    (6, InvoiceStatus.CANCELLED, 20, None, "Erkältung",
+     [("1", 1)], []),
+    (7, InvoiceStatus.SENT, 3, None, "Sportverletzung Knie",
+     [("7", 1), ("410", 1)], [("Verbandmaterial", 8.90)]),
+    (8, InvoiceStatus.PAID, 90, 60, "Jahresuntersuchung",
+     [("8", 1), ("651", 1), ("3501", 1), ("3550", 1), ("3585", 1)], []),
+    (9, InvoiceStatus.DRAFT, 2, None, "Bluthochdruck Kontrolle",
+     [("1", 1), ("602", 1)], []),
+    (0, InvoiceStatus.SENT, 25, None, "Grippeimpfung",
+     [("1", 1), ("250", 1)], [("Grippeimpfstoff", 18.30)]),
+    (1, InvoiceStatus.OVERDUE, 50, 20, "Nachuntersuchung Bronchitis",
+     [("3", 1)], []),
+    (5, InvoiceStatus.PAID, 100, 70, "Check-up",
+     [("7", 1), ("651", 1)], []),
+    (6, InvoiceStatus.VIEWED, 8, None, "Hautausschlag",
+     [("5", 1)], []),
 ]
 
 
@@ -112,125 +154,53 @@ def seed_db():
         # Sample invoices
         if not s.exec(select(Invoice)).first():
             today = date.today()
+            catalog = {num: (desc, rate, cat) for num, desc, rate, cat, _dur in GOAE_CATALOG}
+            patients = s.exec(select(Patient).order_by(Patient.id)).all()
 
-            # Invoice 1 — paid
-            inv1 = Invoice(
-                invoice_number="RE-2026-0001",
-                issue_date=today - timedelta(days=30),
-                due_date=today - timedelta(days=0),
-                status=InvoiceStatus.PAID,
-                diagnosis="Routineuntersuchung",
-                practice_id=1, patient_id=1,
-                subtotal_services=96.05, subtotal_expenses=0,
-                vat_rate=0, vat_amount=0, total=96.05,
-            )
-            s.add(inv1)
-            s.commit()
-            s.add(InvoiceLineItem(
-                invoice_id=inv1.id, goae_number="1", description="Beratung",
-                service_date=today - timedelta(days=31),
-                base_rate=4.66, multiplier=2.3, amount=10.72,
-            ))
-            s.add(InvoiceLineItem(
-                invoice_id=inv1.id, goae_number="8", description="Ganzkörperuntersuchung",
-                service_date=today - timedelta(days=31),
-                base_rate=15.15, multiplier=2.3, amount=34.85,
-            ))
-            s.add(InvoiceLineItem(
-                invoice_id=inv1.id, goae_number="651", description="EKG Ruhe-EKG",
-                service_date=today - timedelta(days=31),
-                base_rate=14.75, multiplier=1.8, amount=26.55,
-            ))
-            s.add(InvoiceLineItem(
-                invoice_id=inv1.id, goae_number="250", description="Blutentnahme venös",
-                service_date=today - timedelta(days=31),
-                base_rate=2.33, multiplier=1.8, amount=4.19,
-            ))
-            s.add(InvoiceLineItem(
-                invoice_id=inv1.id, goae_number="3501", description="Laboruntersuchung Blutbild (klein)",
-                service_date=today - timedelta(days=31),
-                base_rate=3.50, multiplier=1.15, amount=4.03,
-            ))
-            s.add(InvoiceLineItem(
-                invoice_id=inv1.id, goae_number="3585", description="Laboruntersuchung Cholesterin",
-                service_date=today - timedelta(days=31),
-                base_rate=2.33, multiplier=1.15, amount=2.68,
-            ))
-            s.commit()
+            for seq, (pat_idx, status, days_since_issue, days_since_due, diagnosis, items, expenses) in enumerate(SAMPLE_INVOICES, start=1):
+                issue_date = today - timedelta(days=days_since_issue)
+                due_date = (
+                    today - timedelta(days=days_since_due)
+                    if days_since_due is not None
+                    else issue_date + timedelta(days=30)
+                )
 
-            # Invoice 2 — sent, awaiting payment
-            inv2 = Invoice(
-                invoice_number="RE-2026-0002",
-                issue_date=today - timedelta(days=5),
-                due_date=today + timedelta(days=25),
-                status=InvoiceStatus.SENT,
-                diagnosis="Akute Bronchitis",
-                practice_id=1, patient_id=2,
-                subtotal_services=139.02, subtotal_expenses=12.50,
-                vat_rate=0, vat_amount=0, total=151.52,
-            )
-            s.add(inv2)
-            s.commit()
-            s.add(InvoiceLineItem(
-                invoice_id=inv2.id, goae_number="3", description="Eingehende Beratung (>10 min)",
-                service_date=today - timedelta(days=6),
-                base_rate=8.74, multiplier=2.3, amount=20.10,
-            ))
-            s.add(InvoiceLineItem(
-                invoice_id=inv2.id, goae_number="7",
-                description="Vollständige körperliche Untersuchung (mehrere Organsysteme)",
-                service_date=today - timedelta(days=6),
-                base_rate=8.74, multiplier=2.3, amount=20.10,
-            ))
-            s.add(InvoiceLineItem(
-                invoice_id=inv2.id, goae_number="410", description="Ultraschalluntersuchung eines Organs",
-                service_date=today - timedelta(days=6),
-                base_rate=11.66, multiplier=1.8, amount=20.99,
-            ))
-            s.add(InvoiceLineItem(
-                invoice_id=inv2.id, goae_number="602",
-                description="Oxymetrische Untersuchung (Pulsoxymetrie)",
-                service_date=today - timedelta(days=6),
-                base_rate=8.16, multiplier=1.8, amount=14.69,
-            ))
-            s.add(InvoiceLineItem(
-                invoice_id=inv2.id, goae_number="250", description="Blutentnahme venös",
-                service_date=today - timedelta(days=6),
-                base_rate=2.33, multiplier=1.8, amount=4.19,
-            ))
-            s.add(InvoiceLineItem(
-                invoice_id=inv2.id, goae_number="3501",
-                description="Laboruntersuchung Blutbild (klein)",
-                service_date=today - timedelta(days=6),
-                base_rate=3.50, multiplier=1.15, amount=4.03,
-            ))
-            s.add(InvoiceExpense(
-                invoice_id=inv2.id, description="Medikamente (Antibiotikum)",
-                amount=12.50, receipt_required=False,
-            ))
-            s.commit()
+                subtotal_services = 0.0
+                line_rows = []
+                for goae_number, qty in items:
+                    desc, rate, cat = catalog[goae_number]
+                    multiplier = 1.8 if cat == "Technisch" else 2.3
+                    amount = round(rate * multiplier * qty, 2)
+                    subtotal_services += amount
+                    line_rows.append((goae_number, desc, rate, multiplier, qty, amount))
+                subtotal_services = round(subtotal_services, 2)
+                subtotal_expenses = round(sum(amount for _desc, amount in expenses), 2)
 
-            # Invoice 3 — draft
-            inv3 = Invoice(
-                invoice_number="RE-2026-0003",
-                issue_date=today,
-                due_date=today + timedelta(days=30),
-                status=InvoiceStatus.DRAFT,
-                diagnosis="Vorsorgeuntersuchung",
-                practice_id=1, patient_id=3,
-                subtotal_services=45.57, subtotal_expenses=0,
-                vat_rate=0, vat_amount=0, total=45.57,
-            )
-            s.add(inv3)
-            s.commit()
-            s.add(InvoiceLineItem(
-                invoice_id=inv3.id, goae_number="1", description="Beratung",
-                service_date=today,
-                base_rate=4.66, multiplier=2.3, amount=10.72,
-            ))
-            s.add(InvoiceLineItem(
-                invoice_id=inv3.id, goae_number="8", description="Ganzkörperuntersuchung",
-                service_date=today,
-                base_rate=15.15, multiplier=2.3, amount=34.85,
-            ))
-            s.commit()
+                inv = Invoice(
+                    invoice_number=f"RE-{today.year}-{seq:04d}",
+                    issue_date=issue_date,
+                    due_date=due_date,
+                    status=status,
+                    diagnosis=diagnosis,
+                    practice_id=1,
+                    patient_id=patients[pat_idx].id,
+                    subtotal_services=subtotal_services,
+                    subtotal_expenses=subtotal_expenses,
+                    vat_rate=0, vat_amount=0,
+                    total=round(subtotal_services + subtotal_expenses, 2),
+                )
+                s.add(inv)
+                s.commit()
+
+                for goae_number, desc, rate, multiplier, qty, amount in line_rows:
+                    s.add(InvoiceLineItem(
+                        invoice_id=inv.id, goae_number=goae_number, description=desc,
+                        service_date=issue_date, quantity=qty,
+                        base_rate=rate, multiplier=multiplier, amount=amount,
+                    ))
+                for desc, amount in expenses:
+                    s.add(InvoiceExpense(
+                        invoice_id=inv.id, description=desc, amount=amount,
+                        receipt_required=amount > 25.56,
+                    ))
+                s.commit()

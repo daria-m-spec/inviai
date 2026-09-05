@@ -5,7 +5,7 @@ import { NewInvoiceModal } from './NewInvoiceModal'
 import { InvoicePreview } from './InvoicePreview'
 import { StatusBadge, filterBtnBase } from './atoms'
 import { DownloadIcon, SearchIcon } from '../../app/icons'
-import { fmtDate, STATUS_LABEL } from '../../data/inviai'
+import { fmtDate, monthsAgo, STATUS_LABEL } from '../../data/inviai'
 import { api } from '../../api/client'
 import type { ApiInvoice, ApiInvoiceStatus } from '../../api/types'
 
@@ -21,7 +21,8 @@ export function InvoicesPage() {
   const [fPatient, setFPatient] = useState<string[]>([])
   const [fProc, setFProc] = useState<string[]>([])
   const [fStatus, setFStatus] = useState<string[]>([])
-  const [fDate, setFDate] = useState({ from: '', to: '' })
+  const today = new Date().toISOString().split('T')[0]
+  const [fDate, setFDate] = useState({ from: monthsAgo(today, 1), to: today })
   const [previewInv, setPreviewInv] = useState<ApiInvoice | null>(null)
   const [editingInvoice, setEditingInvoice] = useState<ApiInvoice | null>(null)
   const [visible, setVisible] = useState(25)

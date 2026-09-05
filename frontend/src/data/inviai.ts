@@ -30,6 +30,12 @@ export function addDays(dateStr: string, days: number) {
   return d.toISOString().split('T')[0]
 }
 
+export function monthsAgo(dateStr: string, months: number) {
+  const d = new Date(dateStr + 'T00:00:00')
+  d.setMonth(d.getMonth() - months)
+  return d.toISOString().split('T')[0]
+}
+
 // UI title options, mapped to the backend's German Anrede enum on submit.
 export const ANREDE_OPTS: { label: string; value: Anrede }[] = [
   { label: 'Mr', value: 'Herr' },
